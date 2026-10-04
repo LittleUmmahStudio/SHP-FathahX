@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0F5C55">
+<meta name="theme-color" content="#0FA3A3">
 <title>Fatha-X: Eksplorasi Huruf & Bunyi Fathah</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -364,7 +364,8 @@
   @keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
   @keyframes goyang{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
   @keyframes nadi{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
-  @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+  body.tanpa-anim *,body.tanpa-anim *::before,body.tanpa-anim *::after{animation:none !important;transition:none !important}
+  body.tanpa-anim #hiasan,body.tanpa-anim #konfeti{display:none}
 
   @media print{
     .topbar,footer,.toast,.no-print{display:none !important}
@@ -374,15 +375,157 @@
     .sijil{box-shadow:none}
     @page{size:A4 landscape;margin:12mm}
   }
+
+  /* =====================================================
+     VERSI 1.2: warna ceria, bingkai huruf lebih lapang, animasi
+     ===================================================== */
+  :root{
+    --bg:#E6F6FF;
+    --ink:#23304A; --muted:#5B6B85; --line:#D6E8F6;
+    --jade:#0FA3A3; --jade-d:#0A7C7C; --jade-l:#D3F4F1;
+    --sun:#FFC93C; --sun-d:#E0A00B; --sun-l:#FFF2BF;
+    --ok:#22B573; --ok-l:#D7F7E5; --bad:#FF5C77; --bad-l:#FFE0E6;
+    --rumi:#6A4BE0;
+    --coral:#FF6F61; --sky:#2F9BF5; --mint:#2BC48A; --grape:#8A63F0; --pink:#FF5FA2;
+    --l1:#F2584A; --l2:#1E88E5; --l3:#7C4DFF;
+    --f1:#CFF5E2; --f1a:#0E7A4B;
+    --f2:#D0EAFF; --f2a:#135FA6;
+    --f3:#FFE9AE; --f3a:#8A5000;
+    --f4:#E4D9FF; --f4a:#5530B8;
+    --shadow:0 2px 0 rgba(47,155,245,.10), 0 12px 26px -12px rgba(47,100,180,.35);
+  }
+  body{
+    background-color:var(--bg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cg fill='none' stroke='%23BFE0F5' stroke-width='1.2'%3E%3Crect x='20' y='20' width='24' height='24'/%3E%3Crect x='20' y='20' width='24' height='24' transform='rotate(45 32 32)'/%3E%3C/g%3E%3C/svg%3E"),
+      linear-gradient(180deg,#D9F1FF 0%,#FFF6DA 55%,#FFE6F1 100%);
+    background-attachment:fixed;
+  }
+  main,footer{position:relative;z-index:1}
+  .topbar{background:linear-gradient(90deg,#0FA3A3 0%,#2F9BF5 55%,#8A63F0 100%)}
+  .brand{font-size:1.2rem;white-space:nowrap;flex-shrink:0}
+  .brand .bulan{display:inline-block;transform-origin:50% 10%;animation:ayun 3s ease-in-out infinite}
+  .icon-btn{padding:4px 9px;min-width:40px}
+  .chip{flex:0 1 auto;min-width:36px;max-width:26vw}
+  .topbar-actions{flex-shrink:1}
+
+  .hero,.salam{background:linear-gradient(140deg,#10B5AE 0%,#2F9BF5 58%,#8A63F0 100%)}
+  .hero .dekor{position:absolute;z-index:0;font-size:2rem;animation:apung 4s ease-in-out infinite}
+  .hero .dekor.kelip{animation:kelip 2.4s ease-in-out infinite}
+  .hero .d1{top:8%;left:5%} .hero .d2{top:14%;right:6%;animation-delay:1s}
+  .hero .d3{bottom:20%;left:7%;animation-delay:1.2s} .hero .d4{bottom:12%;right:6%;animation-delay:.5s}
+  .ciri .e{display:inline-block;animation:apung 3s ease-in-out infinite}
+  .ciri div:nth-child(2) .e{animation-delay:.5s} .ciri div:nth-child(3) .e{animation-delay:1s}
+  .ciri div:nth-child(1){background:#FFF2BF} .ciri div:nth-child(2){background:#D3F4F1} .ciri div:nth-child(3){background:#FFE0EE}
+
+  /* Latar bergerak */
+  #hiasan{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .latar{position:absolute;line-height:1}
+
+  /* ---------- Bingkai huruf: lebih lapang, tidak menindih soalan ---------- */
+  .papan-huruf{
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+    margin:9px 9px 0;padding:46px 16px 22px;
+    border-radius:110px 110px var(--radius) var(--radius);
+    border-top:0;
+    background:linear-gradient(180deg,#FFFFFF 0%,#F2FAFF 100%);
+    box-shadow:0 0 0 5px var(--c-arch,var(--mint)), 0 0 0 9px #fff, var(--shadow);
+  }
+  .papan-huruf.t1{--c-arch:var(--mint)} .papan-huruf.t2{--c-arch:var(--sky)} .papan-huruf.t3{--c-arch:var(--sun)}
+  .papan-huruf .arahan{
+    margin:0;max-width:94%;font-size:1rem;line-height:1.3;font-weight:700;
+    background:var(--sun-l);color:#7A5200;padding:4px 16px;border-radius:999px;
+  }
+  .papan-huruf .kecil{margin:0}
+  .papan-huruf .ar-row{padding:.1em .15em;line-height:1.75}
+  .ar-1{font-size:clamp(4rem,20vw,5.6rem)}
+  .ar-2{font-size:clamp(2.8rem,14vw,4.4rem)}
+  .ar-3{font-size:clamp(2.2rem,10.5vw,3.5rem)}
+  .rumi-wrap{min-height:56px;margin-top:0}
+  .rumi.besar{font-size:clamp(2rem,9vw,3rem)}
+  .gerbang .ar-row{font-size:clamp(2.8rem,13vw,3.8rem);line-height:1.6}
+
+  /* Huruf berwarna ikut urutan bacaan (kanan ke kiri) */
+  .ar-row > span:nth-child(1){color:var(--l1)}
+  .ar-row > span:nth-child(2){color:var(--l2)}
+  .ar-row > span:nth-child(3){color:var(--l3)}
+
+  /* Pilihan jawapan berwarna */
+  .opt{--c:var(--sky);border-color:#fff;box-shadow:0 5px 0 var(--c), 0 12px 18px -12px rgba(0,0,0,.3);min-height:92px}
+  .pilihan .opt:nth-child(1){--c:#FF8A5B}
+  .pilihan .opt:nth-child(2){--c:var(--sky)}
+  .pilihan .opt:nth-child(3){--c:var(--mint)}
+  .pilihan .opt:nth-child(4){--c:var(--grape)}
+  .opt:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--c)}
+  .opt .ar-row{line-height:1.7}
+  .pilihan-ar .opt{min-height:112px}
+  .pilihan.n1 .ar-opt{font-size:3rem} .pilihan.n2 .ar-opt{font-size:2.3rem} .pilihan.n3 .ar-opt{font-size:1.85rem}
+  .opt.betul{border-color:var(--ok);background:var(--ok-l);box-shadow:0 5px 0 var(--ok);animation:loncat .55s}
+  .opt.salah{border-color:var(--bad);background:var(--bad-l);box-shadow:0 5px 0 var(--bad);animation:goyang .4s}
+  .opt:disabled:not(.betul):not(.salah){opacity:.4;box-shadow:none}
+
+  .kad-fasa{box-shadow:var(--shadow), inset 0 -5px 0 rgba(0,0,0,.07)}
+  .kad-fasa:not(.kunci) .ikon{animation:apung 3.2s ease-in-out infinite}
+  .kad-fasa.f2 .ikon{animation-delay:.4s} .kad-fasa.f3 .ikon{animation-delay:.8s} .kad-fasa.f4 .ikon{animation-delay:1.2s}
+  .kad-fasa .bintang{color:#F5A700}
+  .kad-akhir{background:linear-gradient(135deg,#FFD84D,#FF9F43)}
+  .kad-akhir:not(.kunci) .tr{animation:ayun 2.4s ease-in-out infinite}
+  .kad-akhir.kunci{background:#E4E9E6}
+  .btn{box-shadow:0 4px 0 var(--jade-d)}
+  .btn.emas{background:linear-gradient(180deg,#FFD84D,#FFC93C)}
+  @media (hover:hover){ .btn:hover:not(:disabled),.akt:hover,.kad-fasa:hover:not(.kunci){animation:tampil .35s} }
+
+  /* Bar kemajuan bergerak */
+  .bar-fill{
+    background-color:var(--sun);
+    background-image:linear-gradient(45deg,rgba(255,255,255,.4) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.4) 50%,rgba(255,255,255,.4) 75%,transparent 75%);
+    background-size:24px 24px;animation:jalur 1s linear infinite;
+  }
+
+  /* Animasi huruf & soalan */
+  .papan-huruf .ar-row > span{display:inline-block;animation:muncul .6s cubic-bezier(.3,1.5,.5,1) backwards;animation-delay:var(--d,0s)}
+  .ar-row > span:nth-child(2){--d:.12s} .ar-row > span:nth-child(3){--d:.24s}
+  .papan-huruf.hidup{cursor:pointer}
+  .papan-huruf.hidup .ar-row > span{
+    animation:muncul .6s cubic-bezier(.3,1.5,.5,1) backwards, apung 3s ease-in-out infinite;
+    animation-delay:var(--d,0s), calc(.7s + var(--d,0s));
+  }
+  .papan-huruf .ar-row.lantun > span{animation:loncat .6s ease both;animation-delay:var(--d,0s)}
+  .pilihan .opt{animation:tampil .4s backwards}
+  .pilihan .opt:nth-child(2){animation-delay:.07s} .pilihan .opt:nth-child(3){animation-delay:.14s} .pilihan .opt:nth-child(4){animation-delay:.21s}
+  .msg{animation:tampil .45s}
+  .hasil .lencana{animation:tampil .8s, apung 2.5s ease-in-out .9s infinite}
+  .mini.kini{animation:loncat .5s}
+  .tile:not(.guna){animation:tampil .35s backwards}
+  .jam.amaran{animation:nadi .6s infinite}
+
+  /* Konfeti & percikan bintang */
+  #konfeti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+  .kf{position:absolute;top:-20px;width:10px;height:14px;border-radius:2px;animation:jatuh var(--t,2s) linear forwards}
+  .perc{position:fixed;z-index:60;pointer-events:none;font-size:1.3rem;animation:percik .8s ease-out forwards}
+
+  @keyframes apung{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes ayun{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+  @keyframes kelip{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
+  @keyframes hanyut{from{transform:translateX(-25vw)}to{transform:translateX(125vw)}}
+  @keyframes muncul{from{opacity:0;transform:translateY(26px) scale(.3) rotate(-12deg)}to{opacity:1;transform:none}}
+  @keyframes tampil{0%{opacity:0;transform:scale(.8)}60%{opacity:1;transform:scale(1.08)}100%{transform:none}}
+  @keyframes loncat{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-22px) scale(1.12,.92)}60%{transform:translateY(0) scale(.95,1.06)}}
+  @keyframes jalur{from{background-position:0 0}to{background-position:24px 0}}
+  @keyframes jatuh{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
+  @keyframes percik{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.3);opacity:0}}
 </style>
 </head>
 <body>
 
+<div id="hiasan" aria-hidden="true"></div>
+<div id="konfeti" aria-hidden="true"></div>
+
 <header class="topbar">
-  <button class="brand" onclick="murid ? bukaMenu() : bukaDepan()" aria-label="Laman utama">🌙 Fatha<span class="x">-X</span></button>
+  <button class="brand" onclick="murid ? bukaMenu() : bukaDepan()" aria-label="Laman utama"><span class="bulan">🌙</span> Fatha<span class="x">-X</span></button>
   <div class="topbar-actions">
     <button class="chip" id="chipMurid" onclick="bukaDaftar()" title="Tukar murid" hidden></button>
     <button class="icon-btn" id="btnBunyi" onclick="togolBunyi()" aria-label="Hidup atau matikan bunyi">🔊</button>
+    <button class="icon-btn togol" id="btnAnim" onclick="togolAnim()" aria-label="Hidup atau matikan animasi">✨</button>
     <button class="icon-btn togol" id="btnRumi" onclick="togolRumi()" aria-label="Papar atau sembunyi rumi">Rumi</button>
   </div>
 </header>
@@ -391,6 +534,7 @@
   <!-- Depan -->
   <section class="skrin" id="skrin-depan">
     <div class="panel hero">
+      <span class="dekor d1 kelip">⭐</span><span class="dekor d2">☁️</span><span class="dekor d3 kelip">✨</span><span class="dekor d4">🎈</span>
       <div class="gerbang"><span class="ar-row" lang="ar" dir="rtl"><span>أَ</span><span>بَ</span><span>تَ</span></span></div>
       <p class="siri">Siri Hijaiyyah Pintar</p>
       <h1>Fatha<span class="x">-X</span></h1>
@@ -478,7 +622,7 @@
   </section>
 </main>
 
-<footer>Dibangunkan oleh ❤︎ <strong>Ustazah Sahranie</strong> &nbsp;|&nbsp; Versi 1.1 &nbsp;|&nbsp; © 2025</footer>
+<footer>Dibangunkan oleh ❤︎ <strong>Ustazah Sahranie</strong> &nbsp;|&nbsp; Versi 1.2 &nbsp;|&nbsp; © 2025</footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -594,7 +738,7 @@ function muatSimpanan() {
   try { d = JSON.parse(localStorage.getItem(KUNCI)); } catch (e) {}
   if (!d || typeof d !== 'object') d = {};
   d.murid = d.murid || {};
-  d.tetapan = Object.assign({ bunyi: true, rumi: true }, d.tetapan || {});
+  d.tetapan = Object.assign({ bunyi: true, rumi: true, anim: true }, d.tetapan || {});
   return d;
 }
 let simpanan = muatSimpanan();
@@ -607,30 +751,149 @@ let sesi = null;
    Bunyi — satu AudioContext sahaja (dahulu dicipta setiap klik)
    ========================================================= */
 let ctxAudio = null;
-const NADA = {
-  klik:  [[620, .05]],
-  betul: [[660, .09], [880, .14]],
-  salah: [[260, .12], [200, .18]],
-  tamat: [[523, .1], [659, .1], [784, .1], [1046, .22]]
+const NOT = { C4:261.63, E4:329.63, G4:392, C5:523.25, D5:587.33, E5:659.25, F5:698.46, G5:783.99,
+  A5:880, C6:1046.5, D6:1174.66, E6:1318.5, G6:1567.98 };
+
+// Satu nada. f2 = kelajuan nada akhir (untuk bunyi meluncur)
+function nada(f, t, d, jenis = 'sine', vol = 0.18, f2 = null) {
+  const o = ctxAudio.createOscillator(), g = ctxAudio.createGain();
+  o.type = jenis;
+  o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(ctxAudio.destination);
+  o.start(t); o.stop(t + d + 0.03);
+}
+// Bunyi loceng (nada asas + harmonik)
+function loceng(f, t, d, vol = 0.16) {
+  nada(f, t, d, 'sine', vol);
+  nada(f * 2, t, d * 0.7, 'sine', vol * 0.35);
+  nada(f * 3, t, d * 0.4, 'sine', vol * 0.15);
+}
+function aturan(notes, t, gap, d = 0.22, vol) {
+  notes.forEach((n, i) => loceng(typeof n === 'string' ? NOT[n] : n, t + i * gap, d, vol));
+}
+
+// Setiap jenis bunyi ada beberapa variasi supaya tidak membosankan
+const RESEP = {
+  klik:  t => nada(rawak([587, 660, 698, 784]), t, 0.06, 'sine', 0.13),
+  pop:   t => nada(320, t, 0.09, 'sine', 0.2, 640),
+  lepas: t => nada(520, t, 0.08, 'triangle', 0.15, 330),
+  flip:  t => { nada(880, t, 0.05, 'square', 0.05); nada(1175, t + 0.05, 0.06, 'square', 0.05); },
+  nyala: t => { nada(523, t, 0.08, 'triangle'); nada(784, t + 0.08, 0.12, 'triangle'); },
+  buka:  t => { nada(300, t, 0.3, 'sawtooth', 0.04, 1200); loceng(NOT.G5, t + 0.18, 0.2, 0.12); },
+  padan: t => { loceng(NOT.E5, t, 0.16); loceng(NOT.A5, t + 0.1, 0.26); },
+  tik:   t => nada(1000, t, 0.04, 'square', 0.05),
+  tik2:  t => nada(1450, t, 0.06, 'square', 0.07),
+  bintang: t => aturan(['G5', 'C6', 'E6', 'G6', 2093], t, 0.05, 0.16, 0.1),
+  betul: t => rawak([
+    () => aturan(['C5', 'E5', 'G5'], t, 0.08),
+    () => aturan(['G5', 'C6', 'E6'], t, 0.08),
+    () => aturan(['E5', 'G5', 'E5', 'C6'], t, 0.08),
+    () => { loceng(NOT.C6, t, 0.18); loceng(NOT.G5, t + 0.09, 0.18); loceng(NOT.E6, t + 0.18, 0.3); },
+    () => { nada(400, t, 0.18, 'sine', 0.2, 900); loceng(NOT.C6, t + 0.16, 0.25); }
+  ])(),
+  salah: t => rawak([
+    () => nada(420, t, 0.35, 'sine', 0.18, 180),
+    () => { nada(330, t, 0.16, 'triangle', 0.16); nada(262, t + 0.16, 0.26, 'triangle', 0.16); },
+    () => { nada(300, t, 0.12, 'sine', 0.16, 240); nada(240, t + 0.13, 0.12, 'sine', 0.16, 190); nada(190, t + 0.26, 0.2, 'sine', 0.16, 150); },
+    () => [0, 0.12, 0.24].forEach(d => nada(250, t + d, 0.09, 'triangle', 0.14, 200))
+  ])(),
+  tamat: t => rawak([
+    () => aturan(['C5', 'E5', 'G5', 'C6'], t, 0.11, 0.3),
+    () => aturan(['G4', 'C5', 'E5', 'G5', 'E5', 'G5', 'C6'], t, 0.09, 0.26),
+    () => { aturan(['E5', 'G5', 'C6'], t, 0.1, 0.25); loceng(NOT.E6, t + 0.4, 0.5); loceng(NOT.G5, t + 0.4, 0.5); }
+  ])(),
+  naik: t => {
+    aturan(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], t, 0.11, 0.3);
+    [NOT.C5, NOT.E5, NOT.G5, NOT.C6].forEach(f => loceng(f, t + 0.75, 0.9, 0.1));
+  },
+  sijil: t => {
+    aturan(['C5', 'C5', 'C5', 'E5', 'G5'], t, 0.13, 0.3);
+    aturan(['E5', 'G5', 'C6', 'E6', 'G6'], t + 0.75, 0.1, 0.35);
+    [NOT.C5, NOT.E5, NOT.G5, NOT.C6, NOT.E6].forEach(f => loceng(f, t + 1.3, 1.2, 0.1));
+  }
 };
 function bunyi(jenis) {
   if (!simpanan.tetapan.bunyi) return;
   try {
     ctxAudio = ctxAudio || new (window.AudioContext || window.webkitAudioContext)();
     if (ctxAudio.state === 'suspended') ctxAudio.resume();
-    let t = ctxAudio.currentTime + 0.01;
-    for (const [f, d] of (NADA[jenis] || NADA.klik)) {
-      const o = ctxAudio.createOscillator(), g = ctxAudio.createGain();
-      o.type = 'triangle';
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.18, t + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-      o.connect(g); g.connect(ctxAudio.destination);
-      o.start(t); o.stop(t + d + 0.03);
-      t += d * 0.9;
-    }
+    (RESEP[jenis] || RESEP.klik)(ctxAudio.currentTime + 0.01);
   } catch (e) {}
+}
+// Bunyi klik pada semua butang (kecuali yang ada bunyi sendiri)
+document.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest && e.target.closest('button');
+  if (!b || b.disabled) return;
+  if (b.matches('.opt,.tile,.slot,.kad,#btnBunyi')) return;
+  bunyi('klik');
+});
+
+/* =========================================================
+   Animasi: konfeti, percikan bintang, latar bergerak
+   ========================================================= */
+const WARNA = ['#FF6F61', '#FFC93C', '#2BC48A', '#2F9BF5', '#8A63F0', '#FF5FA2'];
+function konfeti(n = 40) {
+  if (!simpanan.tetapan.anim) return;
+  const w = $('#konfeti');
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('i');
+    c.className = 'kf';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = rawak(WARNA);
+    c.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+    c.style.setProperty('--r', (Math.random() * 900 - 450) + 'deg');
+    c.style.setProperty('--t', (1.6 + Math.random() * 1.4) + 's');
+    c.style.animationDelay = (Math.random() * 0.4) + 's';
+    w.appendChild(c);
+    setTimeout(() => c.remove(), 3600);
+  }
+}
+function percikan(el) {
+  if (!simpanan.tetapan.anim || !el) return;
+  const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('span');
+    p.className = 'perc';
+    p.textContent = rawak(['⭐', '✨', '🌟', '💫']);
+    const a = Math.PI * 2 * i / 8, d = 50 + Math.random() * 30;
+    p.style.left = cx + 'px'; p.style.top = cy + 'px';
+    p.style.setProperty('--dx', Math.cos(a) * d + 'px');
+    p.style.setProperty('--dy', Math.sin(a) * d + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 850);
+  }
+}
+function lantunHuruf(panel) {
+  const r = panel.querySelector('.ar-row');
+  if (!r) return;
+  r.classList.remove('lantun'); void r.offsetWidth; r.classList.add('lantun');
+  bunyi('bintang');
+  percikan(r);
+}
+function togolAnim() {
+  simpanan.tetapan.anim = !simpanan.tetapan.anim;
+  simpan(); kemasTopbar();
+  toast(simpanan.tetapan.anim ? 'Animasi dihidupkan ✨' : 'Animasi dimatikan');
+}
+function hiasLatar() {
+  const el = $('#hiasan');
+  if (!el) return;
+  const senarai = ['⭐', '✨', '🌙', '🌟', '💫', '🎈', '⭐', '✨', '🌟', '☁️', '☁️', '☁️'];
+  el.innerHTML = senarai.map(e => {
+    const awan = e === '☁️';
+    const gaya = awan
+      ? `top:${6 + Math.random() * 70}%;left:0;font-size:${2.6 + Math.random() * 2}rem;opacity:.55;animation:hanyut ${60 + Math.random() * 40}s linear ${-Math.random() * 80}s infinite`
+      : `top:${Math.random() * 92}%;left:${Math.random() * 94}%;font-size:${1.2 + Math.random() * 1.2}rem;opacity:.6;animation:${Math.random() < 0.5 ? 'kelip' : 'apung'} ${3 + Math.random() * 3}s ease-in-out ${-Math.random() * 4}s infinite`;
+    return `<span class="latar" style="${gaya}">${e}</span>`;
+  }).join('');
+}
+function fasaBanner() {
+  const f = sesi.fasa;
+  return `<div class="layak">🌟 <b>Fasa ${f} selesai!</b><br>${f < 4 ? `Fasa ${f + 1} telah dibuka.` : 'Penilaian Akhir telah dibuka.'}</div>`;
 }
 
 /* =========================================================
@@ -692,6 +955,7 @@ function aktSeterusnya(id) {
   return null;
 }
 function tandaSelesai(id, pct, tambahan = {}) {
+  const sebelum = sesi && sesi.fasa ? fasaSiap(sesi.fasa) : true;
   const r = murid.aktiviti[id] || { selesai: false, terbaik: 0, cubaan: 0 };
   r.selesai = true;
   r.terbaik = Math.max(r.terbaik || 0, pct);
@@ -699,6 +963,7 @@ function tandaSelesai(id, pct, tambahan = {}) {
   Object.assign(r, tambahan);
   murid.aktiviti[id] = r;
   simpan();
+  if (sesi && sesi.fasa) sesi.fasaBaru = !sebelum && fasaSiap(sesi.fasa);
 }
 
 /* =========================================================
@@ -711,15 +976,17 @@ function kemasTopbar() {
   b.textContent = simpanan.tetapan.bunyi ? '🔊' : '🔇';
   b.setAttribute('aria-pressed', String(simpanan.tetapan.bunyi));
   $('#btnRumi').setAttribute('aria-pressed', String(simpanan.tetapan.rumi));
+  $('#btnAnim').setAttribute('aria-pressed', String(simpanan.tetapan.anim));
+  document.body.classList.toggle('tanpa-anim', !simpanan.tetapan.anim);
 }
 function togolBunyi() {
   simpanan.tetapan.bunyi = !simpanan.tetapan.bunyi;
-  simpan(); kemasTopbar(); bunyi('klik');
+  simpan(); kemasTopbar(); bunyi('nyala');
   toast(simpanan.tetapan.bunyi ? 'Bunyi dihidupkan 🔊' : 'Bunyi dimatikan 🔇');
 }
 function togolRumi() {
   simpanan.tetapan.rumi = !simpanan.tetapan.rumi;
-  simpan(); kemasTopbar(); bunyi('klik');
+  simpan(); kemasTopbar();
   toast(simpanan.tetapan.rumi
     ? 'Rumi dipaparkan dalam aktiviti Kenal'
     : 'Rumi disembunyikan. Ketik "Tunjuk bunyi" untuk melihatnya.');
@@ -780,7 +1047,7 @@ function pilihMurid(id) {
   simpanan.terakhir = id;
   simpan();
   kemasTopbar();
-  bunyi('betul');
+  bunyi('buka');
   toast(`Assalamualaikum, ${murid.nama}! 🌙`);
   bukaMenu();
 }
@@ -937,6 +1204,8 @@ function maklum(ok, html) {
 function paparKeputusan(o) {
   sesi.tamat = true;
   setKemajuan(100, 'Selesai ✓');
+  konfeti(sesi.fasaBaru ? 130 : 70);
+  if (sesi.fasaBaru) tunda(() => bunyi('naik'), 450);
   let btnNx = '';
   if (sesi.id !== 'akhir') {
     const nx = aktSeterusnya(sesi.id);
@@ -950,6 +1219,7 @@ function paparKeputusan(o) {
       ${o.gelaran ? `<div class="gelaran">${o.gelaran}</div>` : ''}
       ${o.markah ? `<div class="markah-besar">${o.markah}</div>` : ''}
       ${o.stats ? `<div class="stats">${o.stats.map(([l, v]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('')}</div>` : ''}
+      ${sesi.fasaBaru ? fasaBanner() : ''}
       ${o.tambahan || ''}
       <div class="btn-col">
         ${btnNx}
@@ -975,12 +1245,13 @@ function renderKenal() {
   const nota = n === 1 ? NOTA[it[0].a] : null;
   const akhir = sesi.i === sesi.jumlah - 1;
   $('#actArea').innerHTML = `
-    <div class="panel papan-huruf t${sesi.fasa}">
+    <div class="panel papan-huruf hidup t${sesi.fasa}" onclick="lantunHuruf(this)">
       ${arHTML(it, 'ar-' + n)}
       <div class="rumi-wrap">${simpanan.tetapan.rumi
         ? `<div class="rumi besar">${esc(sesi.rumiKini)}</div>`
         : `<button class="btn ghost" onclick="tunjukRumi(this)">👂 Tunjuk bunyi</button>`}</div>
       ${nota ? `<div class="nota">💡 ${esc(nota)}</div>` : ''}
+      <p class="kecil">👆 Ketik huruf untuk bermain</p>
     </div>
     <div class="nav-kenal">
       <button class="btn ghost" onclick="kenalGerak(-1)" ${sesi.i === 0 ? 'disabled' : ''}>← Sebelum</button>
@@ -997,10 +1268,10 @@ function tunjukRumi(btn) {
   d.className = 'rumi besar';
   d.textContent = sesi.rumiKini;
   btn.replaceWith(d);
-  bunyi('klik');
+  bunyi('bintang');
 }
-function kenalGerak(d) { sesi.i = Math.max(0, Math.min(sesi.jumlah - 1, sesi.i + d)); bunyi('klik'); renderKenal(); }
-function kenalLompat(k) { sesi.i = k; bunyi('klik'); renderKenal(); }
+function kenalGerak(d) { sesi.i = Math.max(0, Math.min(sesi.jumlah - 1, sesi.i + d)); renderKenal(); }
+function kenalLompat(k) { sesi.i = k; renderKenal(); }
 function kenalSelesai() {
   tandaSelesai(sesi.id, 100);
   bunyi('tamat');
@@ -1044,7 +1315,7 @@ function tandaJawapan(i) {
   btns.forEach(b => { b.disabled = true; });
   btns[sesi.q.betulIdx]?.classList.add('betul');
   const ok = i === sesi.q.betulIdx;
-  if (!ok) btns[i]?.classList.add('salah');
+  if (!ok) btns[i]?.classList.add('salah'); else percikan(btns[i]);
   return ok;
 }
 function jawabKuiz(i) {
@@ -1053,11 +1324,15 @@ function jawabKuiz(i) {
   const ok = tandaJawapan(i);
   if (ok) {
     sesi.betul++;
+    sesi.runtun = (sesi.runtun || 0) + 1;
     bunyi('betul');
-    maklum(true, rawak(PUJIAN));
-    tunda(lanjut, 1100);
+    const lagi = sesi.runtun % 3 === 0;
+    if (lagi) { konfeti(35); tunda(() => bunyi('bintang'), 300); }
+    maklum(true, rawak(PUJIAN) + (lagi ? ` 🔥 ${sesi.runtun} berturut-turut!` : ''));
+    tunda(lanjut, lagi ? 1500 : 1100);
   } else {
     sesi.salah++;
+    sesi.runtun = 0;
     bunyi('salah');
     const jwp = sesi.q.jenis === 'b2h' ? arHTML(sesi.q.c.huruf, 'ar-inline') : `<b>${esc(sesi.q.c.rumi)}</b>`;
     maklum(false, `${rawak(SEMANGAT)}<br>Jawapan betul: ${jwp}`);
@@ -1121,18 +1396,19 @@ function ketikTile(k) {
   const s = sesi.q.slot.indexOf(null);
   if (s < 0 || sesi.q.slot.includes(k)) return;
   sesi.q.slot[s] = k;
-  bunyi('klik');
+  bunyi('pop');
   lukisSusun();
 }
 function ketikSlot(s) {
   if (sesi.dijawab || sesi.q.slot[s] === null) return;
   sesi.q.slot[s] = null;
-  bunyi('klik');
+  bunyi('lepas');
   lukisSusun();
 }
 function kosongSusun() {
   if (sesi.dijawab) return;
   sesi.q.slot = [null, null, null];
+  bunyi('lepas');
   lukisSusun();
 }
 function semakSusun() {
@@ -1204,10 +1480,12 @@ function ketikKad(sisi, k) {
     if (q.pk === q.pn) {
       q.siap.add(q.pk);
       q.pk = q.pn = null;
-      bunyi('betul');
+      bunyi('padan');
       lukisKad();
       if (q.siap.size === 4) {
         sesi.dijawab = true;
+        tunda(() => bunyi('bintang'), 300);
+        konfeti(30);
         sesi.betul++;
         maklum(true, 'Hebat! Semua padanan betul 🎉');
         tunda(lanjut, 1300);
@@ -1220,7 +1498,7 @@ function ketikKad(sisi, k) {
       tunda(() => { q.pk = q.pn = null; q.kunci = false; lukisKad(); }, 750);
     }
   } else {
-    bunyi('klik');
+    bunyi('flip');
     lukisKad();
   }
 }
@@ -1248,11 +1526,12 @@ function mulaCabaran() {
 }
 function mulaKiraan() {
   bersih();
-  Object.assign(sesi, { masa: 30, betul: 0, salah: 0, i: 0, aktif: true, dijawab: false, tamat: false });
-  bunyi('klik');
+  Object.assign(sesi, { masa: 30, betul: 0, salah: 0, i: 0, runtun: 0, aktif: true, dijawab: false, tamat: false });
+  bunyi('buka');
   pemasa = setInterval(() => {
     sesi.masa--;
     kemasJam();
+    if (sesi.masa > 0 && sesi.masa <= 10) bunyi(sesi.masa <= 3 ? 'tik2' : 'tik');
     if (sesi.masa <= 0) tamatCabaran();
   }, 1000);
   soalanCabaran();
@@ -1278,7 +1557,11 @@ function jawabCabaran(i) {
   if (!sesi.aktif || sesi.dijawab) return;
   sesi.dijawab = true;
   const ok = tandaJawapan(i);
-  if (ok) { sesi.betul++; bunyi('betul'); } else { sesi.salah++; bunyi('salah'); }
+  if (ok) {
+    sesi.betul++; sesi.runtun = (sesi.runtun || 0) + 1;
+    bunyi('betul');
+    if (sesi.runtun % 5 === 0) { konfeti(30); tunda(() => bunyi('bintang'), 250); }
+  } else { sesi.salah++; sesi.runtun = 0; bunyi('salah'); }
   sesi.i++;
   tunda(soalanCabaran, ok ? 350 : 900);
 }
@@ -1323,6 +1606,7 @@ function tamatAkhir() {
   if (layak && (!ak.sijil || markah >= ak.sijil.markah)) ak.sijil = { markah, tarikh: new Date().toISOString() };
   simpan();
   bunyi('tamat');
+  if (layak) tunda(() => bunyi('sijil'), 500);
   paparKeputusan({
     lencana: g.e, tajuk: 'Penilaian Akhir selesai!', gelaran: g.t, markah: `${markah}/100`,
     stats: [['Betul', sesi.betul], ['Salah', sesi.salah]],
@@ -1357,6 +1641,8 @@ function bukaSijil() {
   const s = murid?.akhir?.sijil;
   if (!s) return;
   tunjuk('skrin-sijil');
+  bunyi('sijil');
+  konfeti(80);
   const g = gelaran(s.markah);
   const tarikh = new Date(s.tarikh).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
   $('#sijilIsi').innerHTML = `
@@ -1434,6 +1720,7 @@ function init() {
   $('#inUmur').innerHTML = '<option value="">Pilih umur</option>' +
     Array.from({ length: 11 }, (_, i) => `<option value="${i + 5}">${i + 5} tahun</option>`).join('');
   $('#inNama').addEventListener('keydown', e => { if (e.key === 'Enter') $('#inUmur').focus(); });
+  hiasLatar();
   kemasTopbar();
   bukaDepan();
 }
