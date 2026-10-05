@@ -9,37 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Firebase (Papan Pencapaian). Jika gagal dimuatkan, aplikasi tetap berfungsi. -->
-<script type="module">
-  try {
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } =
-      await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-
-    const app = initializeApp({
-      apiKey: "AIzaSyAZOCQ06W3mCF51AgS5hxQXoWwizFpa_m8",
-      authDomain: "fathax-app.firebaseapp.com",
-      projectId: "fathax-app",
-      storageBucket: "fathax-app.firebasestorage.app",
-      messagingSenderId: "152665643433",
-      appId: "1:152665643433:web:a5bd5f3d173c89388f8cb8"
-    });
-    const fdb = getFirestore(app);
-
-    window.saveToFirebase = async (data) => {
-      try { await addDoc(collection(fdb, "markah_fathax"), data); return true; }
-      catch (e) { console.error("Gagal simpan:", e); return false; }
-    };
-    window.getLeaderboardData = async () => {
-      const q = query(collection(fdb, "markah_fathax"), orderBy("markah", "desc"), limit(60));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    };
-  } catch (e) {
-    console.warn("Firebase tidak dapat dimuatkan:", e);
-  }
-</script>
-
 <style>
   :root{
     --bg:#EEF4EF; --pattern:#D5E4D9;
@@ -636,7 +605,7 @@
   </section>
 </main>
 
-<footer>Dibangunkan oleh ❤︎ <strong>Ustazah Sahranie</strong> &nbsp;|&nbsp; Versi 1.3 &nbsp;|&nbsp; © 2025</footer>
+<footer>Dibangunkan oleh ❤︎ <strong>Ustazah Sahranie</strong> &nbsp;|&nbsp; Versi 1.4 &nbsp;|&nbsp; © 2025</footer>
 <div id="pratonton" hidden role="dialog" aria-modal="true" aria-label="Gambar sijil">
   <div class="pratonton-kotak">
     <p><b>Tekan dan tahan gambar</b> (atau klik kanan di komputer), kemudian pilih <b>Simpan gambar</b>.</p>
@@ -662,7 +631,7 @@ function kocok(arr) {
   }
   return a;
 }
-// Elak XSS: semua teks daripada pengguna/Firebase mesti melalui esc()
+// Elak XSS: semua teks daripada pengguna/papan mesti melalui esc()
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1688,16 +1657,66 @@ function tamatAkhir() {
     markah, gelaran: `${g.e} ${g.t}`, timestamp: new Date().toISOString()
   });
 }
+/* =========================================================
+   Papan Pencapaian: Google Sheets melalui Google Apps Script
+   ========================================================= */
+// Selepas anda deploy Apps Script, tampal URL "Web app" (berakhir dengan /exec) di sini.
+// Jika dibiarkan kosong, papan hanya menunjukkan murid pada peranti ini.
+const PAPAN_URL = '';
+
+async function panggilPapan(hantar) {
+  const ctl = new AbortController();
+  const tt = setTimeout(() => ctl.abort(), 12000);
+  try {
+    const r = hantar
+      ? await fetch(PAPAN_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(hantar), signal: ctl.signal })
+      : await fetch(PAPAN_URL + '?t=' + Date.now(), { signal: ctl.signal });
+    return await r.json();
+  } finally { clearTimeout(tt); }
+}
+const kunciMurid = (d) => (String(d.nama) + '|' + String(d.negeri)).toLowerCase();
+
+// Markah yang gagal dihantar (tiada internet) disimpan dan dihantar semula secara automatik
+function tolakTertunda(d) {
+  const q = simpanan.tertunda = simpanan.tertunda || [];
+  const i = q.findIndex(x => kunciMurid(x) === kunciMurid(d));
+  if (i >= 0) { if (q[i].markah >= d.markah) return; q[i] = d; } else q.push(d);
+  simpan();
+}
+let hantarSedang = false;
+async function hantarTertunda() {
+  if (!PAPAN_URL || hantarSedang || !(simpanan.tertunda || []).length) return;
+  hantarSedang = true;
+  try {
+    const baki = [];
+    for (const d of simpanan.tertunda) {
+      try {
+        const r = await panggilPapan(d);
+        if (!r) throw new Error('tiada jawapan');
+        // r.ok === false = ditolak pelayan (data tidak sah): buang, jangan cuba lagi
+      } catch (e) { baki.push(d); }
+    }
+    simpanan.tertunda = baki;
+    simpan();
+  } finally { hantarSedang = false; }
+}
 async function hantarKeputusan(data) {
-  let ok = false;
-  try { if (typeof window.saveToFirebase === 'function') ok = await window.saveToFirebase(data); } catch (e) {}
-  const el = $('#statusSimpan');
-  if (el) {
-    el.textContent = ok
-      ? '✅ Keputusan telah disimpan ke Papan Pencapaian'
-      : '⚠️ Keputusan tidak dapat dihantar. Semak sambungan internet. Markah tetap disimpan dalam peranti ini.';
-    el.className = 'status ' + (ok ? 'ok' : 'ralat');
+  let mesej, kelas = 'ok';
+  if (!PAPAN_URL) {
+    mesej = '💾 Markah disimpan pada peranti ini';
+  } else {
+    try {
+      const r = await panggilPapan(data);
+      if (r && r.ok) mesej = '✅ Markah telah dihantar ke Papan Pencapaian';
+      else { mesej = '⚠️ Markah tidak diterima oleh papan. Markah tetap disimpan pada peranti ini.'; kelas = 'ralat'; }
+    } catch (e) {
+      tolakTertunda(data);
+      mesej = '📡 Tiada sambungan internet. Markah akan dihantar semula secara automatik.';
+      kelas = 'ralat';
+    }
   }
+  const el = $('#statusSimpan');
+  if (el) { el.textContent = mesej; el.className = 'status ' + kelas; }
 }
 
 /* =========================================================
@@ -1885,49 +1904,79 @@ function tutupGambar() { $('#pratonton').hidden = true; }
 /* =========================================================
    Papan Pencapaian
    ========================================================= */
+function papanTempatan() {
+  return Object.values(simpanan.murid)
+    .filter(m => m.akhir && m.akhir.terbaik > 0)
+    .map(m => ({ nama: m.nama, umur: m.umur, negeri: m.negeri, markah: m.akhir.terbaik }))
+    .sort((a, b) => b.markah - a.markah);
+}
+function paparPapan(data, nota) {
+  const area = $('#papanIsi');
+  const dilihat = new Set(), top = [];
+  for (const d of data) {                       // satu murid hanya sekali (markah terbaik)
+    const k = kunciMurid(d);
+    if (dilihat.has(k)) continue;
+    dilihat.add(k); top.push(d);
+    if (top.length === 10) break;
+  }
+  const notaHTML = nota ? `<p class="kecil" style="text-align:center;margin-top:14px">${esc(nota)}</p>` : '';
+  if (!top.length) {
+    area.innerHTML = `<div class="panel hasil"><div class="lencana">📝</div><h2>Belum ada pencapaian</h2>
+      <p class="kecil">Siapkan Penilaian Akhir dan jadilah yang pertama di sini!</p></div>${notaHTML}`;
+    return;
+  }
+  const medal = ['🏆', '🥈', '🥉'];
+  const pod = [[top[1], 'p2', medal[1]], [top[0], 'p1', medal[0]], [top[2], 'p3', medal[2]]];
+  const saya = (d) => murid && kunciMurid(d) === kunciMurid(murid);
+  area.innerHTML = `
+    <div class="podium">${pod.map(([d, kls, m]) => d ? `
+      <div class="pod ${kls}"><div class="m">${m}</div><div class="n">${esc(d.nama)}</div>
+      <div class="ng">${esc(d.negeri)}</div><div class="s">${Number(d.markah) || 0}</div></div>` : '<div></div>').join('')}
+    </div>
+    <div class="senarai-papan">${top.map((d, i) => {
+      const m = Number(d.markah) || 0, g = gelaran(m);
+      return `<div class="baris-papan ${saya(d) ? 'saya' : ''}">
+        <span class="r">${i < 3 ? medal[i] : i + 1}</span>
+        <span class="nm"><b>${esc(d.nama)}</b><small>${esc(d.negeri)}, ${g.e} ${g.t}</small></span>
+        <span class="sk">${m}</span></div>`;
+    }).join('')}</div>${notaHTML}`;
+}
+async function muatPapan(senyap) {
+  const area = $('#papanIsi');
+  if (!senyap) area.innerHTML = `<div class="panel hasil"><div class="lencana">⏳</div><p>Memuatkan papan pencapaian…</p></div>`;
+  let data, nota;
+  if (!PAPAN_URL) {
+    data = papanTempatan();
+    nota = '📱 Papan ini menunjukkan murid pada peranti ini sahaja.';
+  } else {
+    try {
+      const r = await panggilPapan();
+      if (!r || !r.ok || !Array.isArray(r.data)) throw new Error('papan');
+      data = r.data;
+      try { localStorage.setItem('fathax_papan', JSON.stringify(data)); } catch (e) {}
+      nota = '🔄 Dikemas kini pukul ' + new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' }) + '. Dikemas kini sendiri setiap 30 saat.';
+    } catch (e) {
+      if (senyap) return;                        // kekalkan paparan semasa
+      let lama = null;
+      try { lama = JSON.parse(localStorage.getItem('fathax_papan')); } catch (x) {}
+      if (Array.isArray(lama)) { data = lama; nota = '📡 Tiada sambungan internet. Menunjukkan data terakhir yang dimuat turun.'; }
+      else {
+        area.innerHTML = `<div class="panel hasil"><div class="lencana">📡</div><h2>Papan tidak dapat dimuatkan</h2>
+          <p class="kecil">Semak sambungan internet, kemudian cuba lagi.</p>
+          <div class="btn-col"><button class="btn" onclick="bukaPapan()">↻ Cuba Lagi</button></div></div>`;
+        return;
+      }
+    }
+  }
+  if ($('#skrin-papan').hidden) return;
+  paparPapan(data, nota);
+}
 async function bukaPapan() {
   tunjuk('skrin-papan');
-  const area = $('#papanIsi');
-  area.innerHTML = `<div class="panel hasil"><div class="lencana">⏳</div><p>Memuatkan papan pencapaian…</p></div>`;
-  try {
-    if (typeof window.getLeaderboardData !== 'function') throw new Error('Firebase tiada');
-    const data = await window.getLeaderboardData();
-    if ($('#skrin-papan').hidden) return;
-    // Satu murid hanya muncul sekali (markah terbaiknya)
-    const dilihat = new Set(), top = [];
-    for (const d of data) {
-      const k = String(d.nama || '').trim().toLowerCase() + '|' + (d.negeri || '');
-      if (dilihat.has(k)) continue;
-      dilihat.add(k);
-      top.push(d);
-      if (top.length === 10) break;
-    }
-    if (!top.length) {
-      area.innerHTML = `<div class="panel hasil"><div class="lencana">📝</div><h2>Belum ada pencapaian</h2>
-        <p class="kecil">Siapkan Penilaian Akhir dan jadilah yang pertama di sini!</p></div>`;
-      return;
-    }
-    const medal = ['🏆', '🥈', '🥉'];
-    const pod = [[top[1], 'p2', medal[1]], [top[0], 'p1', medal[0]], [top[2], 'p3', medal[2]]];
-    const saya = (d) => murid && String(d.nama).toLowerCase() === murid.nama.toLowerCase() && d.negeri === murid.negeri;
-    area.innerHTML = `
-      <div class="podium">${pod.map(([d, kls, m]) => d ? `
-        <div class="pod ${kls}"><div class="m">${m}</div><div class="n">${esc(d.nama)}</div>
-        <div class="ng">${esc(d.negeri)}</div><div class="s">${Number(d.markah) || 0}</div></div>` : '<div></div>').join('')}
-      </div>
-      <div class="senarai-papan">${top.map((d, i) => {
-        const m = Number(d.markah) || 0, g = gelaran(m);
-        return `<div class="baris-papan ${saya(d) ? 'saya' : ''}">
-          <span class="r">${i < 3 ? medal[i] : i + 1}</span>
-          <span class="nm"><b>${esc(d.nama)}</b><small>${esc(d.negeri)}, ${g.e} ${g.t}</small></span>
-          <span class="sk">${m}</span></div>`;
-      }).join('')}</div>`;
-  } catch (e) {
-    console.error(e);
-    area.innerHTML = `<div class="panel hasil"><div class="lencana">📡</div><h2>Papan tidak dapat dimuatkan</h2>
-      <p class="kecil">Semak sambungan internet, kemudian cuba lagi.</p>
-      <div class="btn-col"><button class="btn" onclick="bukaPapan()">↻ Cuba Lagi</button></div></div>`;
-  }
+  hantarTertunda();
+  await muatPapan(false);
+  // Kemas kini automatik semasa papan dibuka (pemasa dibersihkan apabila skrin bertukar)
+  if (PAPAN_URL && !$('#skrin-papan').hidden) pemasa = setInterval(() => muatPapan(true), 30000);
 }
 
 /* =========================================================
@@ -1941,6 +1990,8 @@ function init() {
   hiasLatar();
   kemasTopbar();
   bukaDepan();
+  window.addEventListener('online', hantarTertunda);
+  hantarTertunda();
 }
 init();
 </script>
