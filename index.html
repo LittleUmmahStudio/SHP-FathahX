@@ -513,6 +513,17 @@
   @keyframes jalur{from{background-position:0 0}to{background-position:24px 0}}
   @keyframes jatuh{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
   @keyframes percik{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.3);opacity:0}}
+
+  /* ===== Versi 1.3: sijil sebagai gambar ===== */
+  .sijil-img{display:block;width:100%;height:auto;border-radius:14px;background:#fff;box-shadow:var(--shadow);-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+  #pratonton{position:fixed;inset:0;z-index:70;background:rgba(20,30,50,.88);display:flex;align-items:center;justify-content:center;padding:14px}
+  .pratonton-kotak{background:#fff;border-radius:20px;padding:14px;max-width:min(96vw,900px);max-height:92vh;overflow:auto;text-align:center;display:flex;flex-direction:column;gap:10px}
+  .pratonton-kotak img{width:100%;height:auto;border-radius:10px;-webkit-touch-callout:default}
+  @media print{
+    #pratonton,#hiasan,#konfeti{display:none !important}
+    body{background:#fff !important}
+    .sijil-img{box-shadow:none;border-radius:0;width:100%;max-height:100vh;object-fit:contain}
+  }
 </style>
 </head>
 <body>
@@ -616,13 +627,23 @@
   <section class="skrin" id="skrin-sijil" hidden>
     <div class="baris-atas no-print"><button class="btn-back" onclick="bukaMenu()">← Menu</button></div>
     <div id="sijilIsi"></div>
-    <div class="btn-col no-print">
-      <button class="btn emas" onclick="window.print()">🖨️ Cetak atau Simpan PDF</button>
+    <div class="btn-col no-print" id="sijilBtn" hidden>
+      <button class="btn emas" onclick="simpanSijil('png')">🖼️ Simpan Gambar (PNG)</button>
+      <button class="btn" onclick="simpanSijil('pdf')">📄 Simpan PDF</button>
+      <button class="btn ghost" onclick="window.print()">🖨️ Cetak</button>
+      <button class="btn-back" style="align-self:center" onclick="paparGambar()">Tidak berjaya? Papar gambar sijil</button>
     </div>
   </section>
 </main>
 
-<footer>Dibangunkan oleh ❤︎ <strong>Ustazah Sahranie</strong> &nbsp;|&nbsp; Versi 1.2 &nbsp;|&nbsp; © 2025</footer>
+<footer>Dibangunkan oleh ❤︎ <strong>Ustazah Sahranie</strong> &nbsp;|&nbsp; Versi 1.3 &nbsp;|&nbsp; © 2025</footer>
+<div id="pratonton" hidden role="dialog" aria-modal="true" aria-label="Gambar sijil">
+  <div class="pratonton-kotak">
+    <p><b>Tekan dan tahan gambar</b> (atau klik kanan di komputer), kemudian pilih <b>Simpan gambar</b>.</p>
+    <img id="pratontonImg" alt="Sijil Pencapaian">
+    <button class="btn" onclick="tutupGambar()">Tutup</button>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -816,19 +837,64 @@ const RESEP = {
     [NOT.C5, NOT.E5, NOT.G5, NOT.C6, NOT.E6].forEach(f => loceng(f, t + 1.3, 1.2, 0.1));
   }
 };
-function bunyi(jenis) {
-  if (!simpanan.tetapan.bunyi) return;
+const AC = window.AudioContext || window.webkitAudioContext;
+let audioDibuka = false, senyapEl = null, petunjukBunyi = false;
+
+// Fail WAV senyap (dijana sendiri). Memainkannya menukar sesi audio iOS kepada
+// "playback", supaya bunyi tidak disenyapkan oleh suis senyap iPhone/iPad.
+function wavSenyap() {
+  const n = 2205, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const tulis = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  tulis(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); tulis(8, 'WAVE'); tulis(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 22050, true); v.setUint32(28, 44100, true); v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true); tulis(36, 'data'); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
+// Mesti dipanggil daripada sentuhan/klik sebenar. Pelayar (terutama Safari iOS
+// dan Chrome Android) tidak membenarkan bunyi sebelum itu.
+function bukaAudio() {
+  if (!simpanan.tetapan.bunyi || !AC) return;
+  if (audioDibuka && ctxAudio && ctxAudio.state === 'running' && senyapEl && !senyapEl.paused) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
   try {
-    ctxAudio = ctxAudio || new (window.AudioContext || window.webkitAudioContext)();
-    if (ctxAudio.state === 'suspended') ctxAudio.resume();
-    (RESEP[jenis] || RESEP.klik)(ctxAudio.currentTime + 0.01);
+    ctxAudio = ctxAudio || new AC();
+    if (ctxAudio.state !== 'running') ctxAudio.resume().catch(() => {});
+    const bf = ctxAudio.createBuffer(1, 1, 22050), sr = ctxAudio.createBufferSource();
+    sr.buffer = bf; sr.connect(ctxAudio.destination); sr.start(0);
   } catch (e) {}
+  try {
+    if (!senyapEl) { senyapEl = new Audio(wavSenyap()); senyapEl.loop = true; senyapEl.setAttribute('playsinline', ''); }
+    if (senyapEl.paused) senyapEl.play().catch(() => {});
+  } catch (e) {}
+  setTimeout(() => {
+    if (ctxAudio && ctxAudio.state === 'running') audioDibuka = true;
+    else if (!petunjukBunyi && simpanan.tetapan.bunyi) {
+      petunjukBunyi = true;
+      toast('🔇 Bunyi belum aktif. Pastikan peranti tidak dalam mod senyap dan kelantangan dinaikkan.');
+    }
+  }, 700);
+}
+['pointerup', 'touchend', 'click', 'keydown'].forEach(e => document.addEventListener(e, bukaAudio, true));
+document.addEventListener('visibilitychange', () => { if (document.hidden && senyapEl) senyapEl.pause(); });
+
+function bunyi(jenis) {
+  if (!simpanan.tetapan.bunyi || !AC) return;
+  try {
+    ctxAudio = ctxAudio || new AC();
+    const main = () => (RESEP[jenis] || RESEP.klik)(ctxAudio.currentTime + 0.02);
+    if (ctxAudio.state === 'running') { main(); return; }
+    // Konteks masih tidur: bangunkan dahulu, mainkan hanya jika cepat (elak bunyi lewat)
+    const t0 = Date.now();
+    ctxAudio.resume().then(() => { if (Date.now() - t0 < 500) main(); }).catch(() => {});
+  } catch (e) { console.warn('Bunyi:', e); }
 }
 // Bunyi klik pada semua butang (kecuali yang ada bunyi sendiri)
 document.addEventListener('pointerdown', (e) => {
-  const b = e.target.closest && e.target.closest('button');
-  if (!b || b.disabled) return;
-  if (b.matches('.opt,.tile,.slot,.kad,#btnBunyi')) return;
+  const bt = e.target.closest && e.target.closest('button');
+  if (!bt || bt.disabled) return;
+  if (bt.matches('.opt,.tile,.slot,.kad,#btnBunyi')) return;
   bunyi('klik');
 });
 
@@ -1637,12 +1703,9 @@ async function hantarKeputusan(data) {
 /* =========================================================
    Sijil
    ========================================================= */
-function bukaSijil() {
+function sijilHTMLLama() {
   const s = murid?.akhir?.sijil;
   if (!s) return;
-  tunjuk('skrin-sijil');
-  bunyi('sijil');
-  konfeti(80);
   const g = gelaran(s.markah);
   const tarikh = new Date(s.tarikh).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
   $('#sijilIsi').innerHTML = `
@@ -1663,6 +1726,161 @@ function bukaSijil() {
       </div>
     </div>`;
 }
+
+/* ---------- Sijil sebagai gambar (PNG) dan PDF: berfungsi di semua peranti ---------- */
+let sijilFail = null;
+function pathBulat(x, a, b, w, h, r) {
+  x.beginPath();
+  x.moveTo(a + r, b);
+  x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r);
+  x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r);
+  x.closePath();
+}
+async function lukisSijil() {
+  const rek = murid.akhir.sijil, g = gelaran(rek.markah);
+  const W = 1754, H = 1240, T = W / 2;   // A4 melintang, 150 dpi
+  try { await Promise.all([document.fonts.load('800 80px "Baloo 2"'), document.fonts.load('600 40px "Baloo 2"')]); } catch (e) {}
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const F = (w, px) => `${w} ${px}px "Baloo 2", "Nunito", system-ui, sans-serif`;
+  const teks = (t, y, font, warna) => { x.font = font; x.fillStyle = warna; x.fillText(t, T, y); };
+  const muat = (t, px, lebarMax, w = 800) => { x.font = F(w, px); while (x.measureText(t).width > lebarMax && px > 40) { px -= 4; x.font = F(w, px); } return px; };
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+
+  x.fillStyle = '#FFFDF5'; x.fillRect(0, 0, W, H);
+  const gr = x.createLinearGradient(70, 0, W - 70, 0);
+  gr.addColorStop(0, '#0FA3A3'); gr.addColorStop(0.55, '#2F9BF5'); gr.addColorStop(1, '#8A63F0');
+  x.fillStyle = gr; x.fillRect(70, 70, W - 140, 24);
+  x.strokeStyle = '#E0A00B'; x.lineWidth = 14; x.strokeRect(40, 40, W - 80, H - 80);
+  x.lineWidth = 4; x.strokeRect(70, 70, W - 140, H - 140);
+  x.fillStyle = '#FFC93C'; x.font = F(800, 44);
+  [[115, 150], [W - 115, 150], [115, H - 100], [W - 115, H - 100]].forEach(([a, b]) => x.fillText('✦', a, b));
+
+  teks('✦  ☪  ✦', 205, F(700, 54), '#E0A00B');
+  teks('Siri Hijaiyyah Pintar', 262, F(600, 36), '#5B6B85');
+  teks('Sijil Pencapaian', 378, F(800, 112), '#0A7C7C');
+  teks('Dengan ini disahkan bahawa', 458, F(600, 42), '#23304A');
+
+  const px = muat(murid.nama, 160, W - 420);
+  teks(murid.nama, 592, F(800, px), '#23304A');
+  const wn = x.measureText(murid.nama).width;
+  x.strokeStyle = '#FFC93C'; x.lineWidth = 8; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(T - wn / 2 - 30, 618); x.lineTo(T + wn / 2 + 30, 618); x.stroke();
+
+  teks(`Umur ${murid.umur} tahun, ${murid.negeri}`, 688, F(600, 38), '#5B6B85');
+  teks('telah berjaya menamatkan', 768, F(600, 42), '#23304A');
+  const tajuk = 'Fatha-X: Eksplorasi Huruf & Bunyi Fathah';
+  teks(tajuk, 852, F(800, muat(tajuk, 60, W - 300)), '#0A7C7C');
+  teks("Rujukan: Iqra' 1 KPM", 908, F(600, 34), '#5B6B85');
+
+  const skor = `${rek.markah}/100   ${g.e} ${g.t}`;
+  x.font = F(800, 56);
+  const pw = x.measureText(skor).width + 110, ph = 104, ry = 948;
+  x.fillStyle = '#0FA3A3'; pathBulat(x, T - pw / 2, ry, pw, ph, 30); x.fill();
+  teks(skor, ry + ph / 2 + 20, F(800, 56), '#FFFFFF');
+
+  const tarikh = new Date(rek.tarikh).toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+  x.textAlign = 'left';
+  x.font = F(600, 30); x.fillStyle = '#5B6B85'; x.fillText('Tarikh', 160, 1105);
+  x.font = F(800, 40); x.fillStyle = '#23304A'; x.fillText(tarikh, 160, 1150);
+  x.textAlign = 'center';
+  x.strokeStyle = '#23304A'; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(W - 560, 1112); x.lineTo(W - 160, 1112); x.stroke();
+  x.font = F(800, 36); x.fillStyle = '#23304A'; x.fillText('Guru Pembimbing', W - 360, 1156);
+  return c;
+}
+const keBlob = (c, jenis, mutu) => new Promise(r => c.toBlob(r, jenis, mutu));
+
+// PDF 1 halaman (A4 melintang) berisi gambar sijil. Dibina terus tanpa pustaka luar.
+function binaPDF(jpeg, iw, ih) {
+  const enc = new TextEncoder(), W = 842, H = 595, bahagian = [], ofs = [];
+  let len = 0;
+  const tolak = (d) => { const b = typeof d === 'string' ? enc.encode(d) : d; bahagian.push(b); len += b.length; };
+  const obj = (n, isi) => { ofs[n] = len; tolak(`${n} 0 obj\n${isi}\nendobj\n`); };
+  tolak('%PDF-1.4\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+  ofs[4] = len;
+  tolak(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${iw} /Height ${ih} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`);
+  tolak(jpeg); tolak('\nendstream\nendobj\n');
+  const kandungan = `q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`;
+  obj(5, `<< /Length ${kandungan.length} >>\nstream\n${kandungan}\nendstream`);
+  const xref = len;
+  let jadual = 'xref\n0 6\n0000000000 65535 f \n';
+  for (let i = 1; i <= 5; i++) jadual += String(ofs[i]).padStart(10, '0') + ' 00000 n \n';
+  tolak(jadual + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  const out = new Uint8Array(len);
+  let pos = 0;
+  for (const b of bahagian) { out.set(b, pos); pos += b.length; }
+  return out;
+}
+async function binaSijilFail() {
+  const c = await lukisSijil();
+  const png = await keBlob(c, 'image/png');
+  const jpg = await keBlob(c, 'image/jpeg', 0.92);
+  if (!png || !jpg) throw new Error('Gagal menjana gambar');
+  const pdf = new Blob([binaPDF(new Uint8Array(await jpg.arrayBuffer()), c.width, c.height)], { type: 'application/pdf' });
+  return { png, pdf, url: URL.createObjectURL(png) };
+}
+async function bukaSijil() {
+  const rek = murid?.akhir?.sijil;
+  if (!rek) return;
+  tunjuk('skrin-sijil');
+  bunyi('sijil');
+  konfeti(80);
+  $('#sijilBtn').hidden = true;
+  $('#sijilIsi').innerHTML = '<div class="panel hasil"><div class="lencana">📜</div><p>Menyediakan sijil…</p></div>';
+  try {
+    const fail = await binaSijilFail();
+    if (sijilFail && sijilFail.url) URL.revokeObjectURL(sijilFail.url);
+    sijilFail = fail;
+    if ($('#skrin-sijil').hidden) return;
+    $('#sijilIsi').innerHTML = `<img id="sijilImg" class="sijil-img" alt="Sijil Pencapaian ${esc(murid.nama)}" src="${fail.url}">`;
+  } catch (e) {
+    console.error('Sijil:', e);
+    sijilFail = null;
+    sijilHTMLLama();
+  }
+  $('#sijilBtn').hidden = false;
+}
+const esMudahAlih = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+  (/Mac/.test(navigator.platform) && navigator.maxTouchPoints > 1);   // iPad dalam mod desktop
+function namaFailSijil() {
+  const n = (murid.nama || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return 'Sijil-FathaX-' + (n || 'Murid');
+}
+async function simpanSijil(jenis) {
+  if (!sijilFail) return toast('Simpan gambar tidak tersedia pada pelayar ini. Guna butang Cetak.');
+  const blob = jenis === 'pdf' ? sijilFail.pdf : sijilFail.png;
+  const nama = namaFailSijil() + (jenis === 'pdf' ? '.pdf' : '.png');
+  // 1) Telefon & tablet: helaian kongsi (Simpan ke Foto, Simpan ke Fail, WhatsApp, dsb.)
+  if (esMudahAlih()) {
+    try {
+      const fail = new File([blob], nama, { type: blob.type });
+      if (navigator.canShare && navigator.canShare({ files: [fail] })) {
+        await navigator.share({ files: [fail], title: 'Sijil Fatha-X' });
+        return;
+      }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  // 2) Komputer (dan peranti tanpa helaian kongsi): muat turun terus
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nama; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast(jenis === 'pdf' ? '📄 PDF sedang dimuat turun' : '🖼️ Gambar sedang dimuat turun');
+  } catch (e) { paparGambar(); }
+}
+function paparGambar() {
+  if (!sijilFail) return toast('Gambar sijil belum tersedia.');
+  $('#pratontonImg').src = sijilFail.url;
+  $('#pratonton').hidden = false;
+}
+function tutupGambar() { $('#pratonton').hidden = true; }
 
 /* =========================================================
    Papan Pencapaian
